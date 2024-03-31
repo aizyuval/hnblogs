@@ -4,19 +4,15 @@ version: '3.4'
 services:
 
   
-  typesense:
-    #    image: typesense/typesense:0.25.2
-    build: 
-      context: "typesense/"
-      args:
-      - env=test
+  typesense: # only service. No index at hand.
+    image: typesense/typesense:0.25.2
     container_name: typesense_test
     restart: "no"
     ports:
       - "8108:8108" 
 #    volumes:
 #    - "../data/typesense_data:/data"
-    command: "--data-dir /tmp/data --api-key $TYPESENSE_API_KEY --enable-cors"
+    command: "--data-dir /home --api-key $TYPESENSE_API_KEY --enable-cors"
     environment:
       TYPESENSE_API_KEY: ${TYPESENSE_API_KEY}
 

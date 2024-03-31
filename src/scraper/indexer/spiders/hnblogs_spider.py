@@ -23,19 +23,23 @@ class hnBlogsSpider(CrawlSpider):
 Typesense Schema:
 
 blogs_schema = { 
-    'name': 'blogs',  # global name for the collection
-
-    'fields': [
-    # an id field will be provided. It will be the original url (not redirected)
-    { 'name': 'title', 'type': 'string' },
-    { 'name': 'content', 'type': 'string' },
-    { 'name': 'domain', 'type': 'string' },
-    { 'name': 'url', 'type': 'string', 'index': 'false' }, # this is the served url, which could be a redirection point
-    { 'name': 'description', 'type': 'string', 'optional': True },
-    { 'name': 'anchor', 'type': 'string', 'optional: True },
-    {'name': 'language', 'type': 'string' },
-    ],
-    'default_sorting_field': 'item_priority'
+	    "name": "hnblogs", 
+	    "fields": [ 
+	    { "name": "title", "type": "string" }, 
+	    { "name": "content", "type": "string" }, 
+	    { "name": "domain", "type": "string", "facet": true }, 
+	    { "name": "page-type", "type": "string"}, 
+	    { "name": "description", "type": "string", "optional": true }, 
+	    { "name": "anchor", "type": "string", "optional": true }, 
+	    { "name": "language", "type": "string", "optional": true }, 
+	    { "name": "url", "type": "string" }, 
+	    { "name": "content-type", "type": "string", "index": false, "optional": true}, 
+	    { "name": "page_last_modified", "type": "int64", "facet": true }, 
+	    { "name": "indexed_date", "type": "int64", "optional": true,"index": false, "optional": true }
+ 
+	    ], 
+ 
+	    "token_separators": ["_", "-"] 
 }
 """
     custom_settings = {
@@ -46,8 +50,8 @@ blogs_schema = {
 
     def __init__(self, *args, **kwargs):
         # Get kwargs
+        self.typesense_helper = kwargs.get('typesense_helper')
         self.site_config = kwargs.get('site_config')
-        self.common_config = kwargs.get('common_config')
         self.home_page = self.site_config['home_page']
         self.domain = self.site_config['domain']
 

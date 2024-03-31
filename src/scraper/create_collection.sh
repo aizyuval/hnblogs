@@ -1,7 +1,4 @@
 #!/bin/sh
-#response = $(curl http://localhost:8108/collections)
-#if ["$response" -eq 200]; then
-#url is not marked index:false because then it would not be mandatory
 curl "http://localhost:8108/collections" \
       -X POST \
       -H "Content-Type: application/json" \
@@ -24,8 +21,6 @@ curl "http://localhost:8108/collections" \
  
 	    "token_separators": ["_", "-"] 
       }'
-#fi
-
 
 
 
