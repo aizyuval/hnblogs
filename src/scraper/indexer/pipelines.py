@@ -1,15 +1,10 @@
 # pipelines are like typesense_helper.
 # they provide creating, adding and commiting of new records to the overall index meanwhile the crawling process is undergoing.
 
-
-
-
-
-
-
-
-############################3 PIPELINES
-import pysolr
+import typesense
+from typesense import exceptions
+import json
+from builtins import range
 from typesense_helper import TypesenseHelper
 from scrapy.utils.log import configure_logging
 from scrapy.exceptions import DropItem
@@ -20,10 +15,6 @@ import logging
 from common.utils import update_indexing_status, get_last_complete_indexing_log_message, deactivate_indexing, web_feed_and_sitemap, convert_datetime_to_utc_date, send_email
 
 
-# This is the Solr pipeline, for submitting indexed items to Solr
-# It originally just did a self.solr.add(dict(item)) in process_item 
-# and self.solr.commit() in close_spider because a commit on every add was slow.
-# However, it now builds a list of dicts and only connects to Solr on the close_spider.
 # 
 # Notes on deduplication:
 # If I start indexing https://michael-lewis.com/ from https://www.michael-lewis.com/ 
@@ -74,7 +65,7 @@ class TypesensePypline:
         else:
             self.logger.info('Submitting {} newly spidered docs to Typesense for {}.'.format(str(no_of_docs), spider.domain))
 
-            # add the items to the TEMPORARY COLLECTION
+            # sequentially add the items to the TEMPORARY COLLECTION
             self.typesense_helper.add_records(self.items, no_of_docs)
 
             # Save changes to the overall collection
@@ -89,13 +80,11 @@ class TypesensePypline:
 
     def process_item(self, item, spider):
         new_url = item['url']
-        # Strip out the trailing slashes of the new for a fairer comparison
-        # so e.g. https://michael-lewis.com/ and https://michael-lewis.com get treated as duplicates
-        #if new_url.endswith('/'): new_url = new_url[:-1]
+
         if 'title' in item: new_title = item['title']
         add = True
         for i in self.items:
-            existing_url = i['url'] # last url
+            existing_url = i['url'] 
             if 'title' in i: existing_title = i['title']
             # if new_url is the same as existing_url (this shouldn't happen because of built-in deduplication) or
             # if new_url without www. is the same as an existing_url or vice versa (which could happen because the built-in deduplication doesn't catch this)

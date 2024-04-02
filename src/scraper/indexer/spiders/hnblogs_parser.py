@@ -12,20 +12,22 @@ from httpdate import httpdate_to_unixtime
 from common.utils import get_text
 
 """ Typesense schema:
+
 blogs_schema = { 
+        # id
 	    "name": "hnblogs", 
 	    "fields": [ 
-	    { "name": "title", "type": "string" }, 
-	    { "name": "content", "type": "string" }, 
-	    { "name": "domain", "type": "string", "facet": true }, 
-	    { "name": "page-type", "type": "string"}, 
-	    { "name": "description", "type": "string", "optional": true }, 
-	    { "name": "anchor", "type": "string", "optional": true }, 
-	    { "name": "language", "type": "string", "optional": true }, 
-	    { "name": "url", "type": "string" }, 
-	    { "name": "content-type", "type": "string", "index": false, "optional": true}, 
-	    { "name": "page_last_modified", "type": "int64", "facet": true }, 
-	    { "name": "indexed_date", "type": "int64", "optional": true,"index": false, "optional": true }
+	    { "name": "title", "type": "string" }, -Vx
+	    { "name": "content", "type": "string" }, -Vx
+	    { "name": "domain", "type": "string", "facet": true }, -Vx
+	    { "name": "page-type", "type": "string"}, -Vx
+	    { "name": "description", "type": "string", "optional": true }, -Vx
+	    { "name": "anchor", "type": "string", "optional": true }, # without
+	    { "name": "language", "type": "string", "optional": true }, -Vx
+	    { "name": "url", "type": "string" }, -Vx
+	    { "name": "content-type", "type": "string", "index": false, "optional": true}, -Vx
+	    { "name": "page_last_modified", "type": "int64", "facet": true }, -Vx
+	    { "name": "indexed_date", "type": "int64", "optional": true,"index": false, "optional": true } -Vx
  
 	    ], 
  
@@ -33,10 +35,10 @@ blogs_schema = {
 }
 """
 
-# Custom parser will be invoked by my_scraper, after retrieving the response from the get request
+# Custom parser will be invoked by hnblogs_spider, after retrieving the response from the get request
 
 
-def customparser(response, domain, site_config, common_config):
+def customparser(response, domain, site_config):
 
     configure_logging(get_project_settings())
     logger = logging.getLogger()
@@ -44,7 +46,7 @@ def customparser(response, domain, site_config, common_config):
 
     # check for type (this is first because some types might be on the exclude type list and we want to return None so it isn't yielded)
     ctype = None
-    if isinstance(response, XmlResponse) or isinstance(
+    if isinstance(
         response, HtmlResponse
     ):   # i.e. not a TextResponse like application/json which wouldn't be parseable via xpath
         # If the page returns a Content-Type suggesting XmlResponse or HtmlResponse but is e.g. JSON it will throw a "ValueError: Cannot use xpath on a Selector of type 'json'"
@@ -58,7 +60,7 @@ def customparser(response, domain, site_config, common_config):
                 ).get()   # <article data-post-id="XXX" data-post-type="...">
         except ValueError:
             logger.info(
-                'Aborting parsing for {}: not XmlResponse or HtmlResponse'.format(
+                'Aborting parsing for {}: not HtmlResponse'.format(
                     response.url
                 )
             )
@@ -70,6 +72,7 @@ def customparser(response, domain, site_config, common_config):
     # All TextResponse
     # --------------------------------------------
 
+    # obtaining the original url before redirects if any
     original_url = response.url
     if 'redirect_urls' in response.request.meta:
         original_url = response.request.meta['redirect_urls'][0]   # first url
@@ -113,6 +116,7 @@ def customparser(response, domain, site_config, common_config):
     indexed_date = datetime.datetime.now().timestamp()   # unix-time
     item['indexed_date'] = indexed_date
 
+    """
     # XmlResponse and HtmlResponse, i.e. not TextResponse which includes application/json
     # -----------------------------------------------------------------------------------
 
@@ -126,7 +130,7 @@ def customparser(response, domain, site_config, common_config):
         ).get()   # <title>...</title>
 
         # page_type (value obtained at the start in case there was a page type exclusion)
-
+    """
     # HtmlResponse
     # ------------
 
@@ -142,7 +146,10 @@ def customparser(response, domain, site_config, common_config):
             ).get()   # <meta property="og:description" content="..." />
         item['description'] = description
 
+        item['title'] = response.xpath('//title/text()').get()
+
         # content
+
         only_body = SoupStrainer('body')
         body_html = BeautifulSoup(response.text, 'lxml', parse_only=only_body)
         for non_content in body_html(
@@ -171,22 +178,22 @@ def customparser(response, domain, site_config, common_config):
             language_primary = language[:2] # First two characters, e.g. en-GB becomes en
         item['language_primary'] = language_primary
         """
+        """
+            # XmlResponse
+            # -----------
 
-    # XmlResponse
-    # -----------
+            elif isinstance(response, XmlResponse):
 
-    elif isinstance(response, XmlResponse):
+                # For XML this will record the rood node name
+                item['page_type'] = response.xpath('name(/*)').get()
 
-        # For XML this will record the rood node name
-        item['page_type'] = response.xpath('name(/*)').get()
-
-        d = feedparser.parse(response.text)
-        entries = d.entries
-        version = None
-        if entries:
-            version = d.version
-            item['is_web_feed'] = True
-
+                d = feedparser.parse(response.text)
+                entries = d.entries
+                version = None
+                if entries:
+                    version = d.version
+                    item['is_web_feed'] = True
+        """
     # Not HtmlResponse, i.e. TextResponse including text/plain and application/json
     # ---------------------------------------------------------------------------------------------
     # Note that non-browser friendly results, e.g. XML and RSS, are filtered out from the results pages

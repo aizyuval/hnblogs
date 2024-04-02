@@ -18,9 +18,9 @@ import os
 # CrawlerProcess will start a Twisted reactor for you
 
 settings = get_project_settings()
-configure_logging(
-    settings
-)   # Need to pass in settings to pick up LOG_LEVEL, otherwise it will stay at DEBUG irrespective of LOG_LEVEL in settings.py
+
+# Need to pass in settings to pick up LOG_LEVEL, otherwise it will stay at DEBUG irrespective of LOG_LEVEL in settings.py
+configure_logging(settings)
 logger = logging.getLogger()
 
 
@@ -32,11 +32,10 @@ logger.debug(
     )
 )
 
-# SETUP ENV VARIABLES
-
+# Setup env variables
 db_name = settings.get('DB_NAME')
 db_user = settings.get('DB_USER')
-db_host = settings.get('DB_HOST')   # host -> 'db' ?
+db_host = settings.get('DB_HOST')
 db_password = settings.get('DB_PASSWORD')
 
 
@@ -51,6 +50,7 @@ if 'TEST_DOCS_NUM' in os.environ:
 logger.info('Checking for sites to index')
 
 logger.debug('Reading from database {}'.format(db_name))
+
 try:
     conn = psycopg2.connect(
         dbname=db_name, user=db_user, host=db_host, password=db_password
@@ -78,9 +78,8 @@ finally:
 if sites_to_crawl:
     logger.info('sites_to_crawl: {}'.format(sites_to_crawl))
 
-# Read data from Solr (indexed_inlinks, content and if necessary already_indexed_links)
 
-# Run the crawler
+# Define helper *once* for all sites
 typesense_helper = TypesenseHelper(
     'HNblogsIndex',  #  alias
     'HNblogsIndexTMP',
@@ -89,7 +88,7 @@ typesense_helper = TypesenseHelper(
 
 if sites_to_crawl:
     process = CrawlerProcess(settings)
-    for site_to_crawl in sites_to_crawl:   # add
+    for site_to_crawl in sites_to_crawl:
         process.crawl(
             HNblogsSpider,
             site_config=site_to_crawl,

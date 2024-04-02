@@ -26,7 +26,7 @@ DB_HOST = 'db'
 # Searchmysite custom config for search
 SOLR_URL = 'http://search:8983/solr/content/'
 
-
+# The following are automatically taken by scrapy when calling configure_logging:
 LOG_LEVEL = 'INFO'
 LOG_FILE = logs
 

@@ -1,6 +1,6 @@
 import scrapy
 from scrapy.spiders import Spider, CrawlSpider, Rule
-from scrapy.linkextractors import LinkExtractor, IGNORED_EXTENSIONS
+from scrapy.linkextractors import LinkExtractor, IGNORED_EXTENSIONS # LinkExtractor is the same as LxmlLinkExtractor
 from scrapy.exceptions import CloseSpider, IgnoreRequest
 from scrapy.http.response.text import TextResponse
 from scrapy.http import Request, HtmlResponse, XmlResponse
@@ -17,20 +17,20 @@ import re
 
 IGNORED_EXTENSIONS += ['jar', 'json', 'cbr'] 
 
-class hnBlogsSpider(CrawlSpider):
-    name = "hnblogsspider"
+class HNblogsSpider(CrawlSpider):
+    name = "HNblogsSpider"
 """
 Typesense Schema:
 
 blogs_schema = { 
-	    "name": "hnblogs", 
+	    "name": "HNblogsSchema", 
 	    "fields": [ 
 	    { "name": "title", "type": "string" }, 
 	    { "name": "content", "type": "string" }, 
 	    { "name": "domain", "type": "string", "facet": true }, 
 	    { "name": "page-type", "type": "string"}, 
 	    { "name": "description", "type": "string", "optional": true }, 
-	    { "name": "anchor", "type": "string", "optional": true }, 
+	    { "name": "anchor", "type": "string", "optional": true },  ##### remove
 	    { "name": "language", "type": "string", "optional": true }, 
 	    { "name": "url", "type": "string" }, 
 	    { "name": "content-type", "type": "string", "index": false, "optional": true}, 
@@ -44,7 +44,7 @@ blogs_schema = {
 """
     custom_settings = {
         'ITEM_PIPELINES': {
-            'indexer.pipelines.TypesensePipeline': 300 # activate the item pipeline (that will commit resutls to typesense inex
+            'indexer.pipelines.TypesensePipeline': 300 # activate the item pipeline (that will add/commit parsed results)
         }
     }
 
@@ -55,6 +55,7 @@ blogs_schema = {
         self.home_page = self.site_config['home_page']
         self.domain = self.site_config['domain']
 
+        """
         # Check for sitemap.xml
         self.rexml = requests.head(f'{self.home_page}/sitemap.xml')
 
@@ -64,14 +65,18 @@ blogs_schema = {
             self.web_feed = None
 
         self.site_config['feed_links'] = [] # This will be instantiated by parse_start_url, for enumerating over web_feed links
+        """
 
         # Set Scrapy spider attributes, i.e. start_urls and allowed_domains
         # start_urls is where the indexing starts, in this case the home page and (if present) web feed
-        if self.web_feed:
+        # Currently allowd_domains is the domain of the blog.
+
+        """if self.web_feed:
             self.start_urls = [self.home_page, self.web_feed]
-        else:
-            self.start_urls = [self.home_page]
-        self.allowed_domains = [self.domain]
+        else::"""
+        self.start_urls = [self.home_page]
+        self.allowed_domains = [self.domain] 
+
         self.logger.info('Start URLs {}'.format(self.start_urls))
         self.logger.info('Allowed domains {}'.format(self.allowed_domains))
 
@@ -92,7 +97,7 @@ blogs_schema = {
                 follow=True
                 ),
             )
-        super(SearchMySiteSpider, self).__init__(self, *args, **kwargs) # FIX: UNNECESSARY SECOND SELF
+        super(HNblogsSpider, self).__init__(self, *args, **kwargs) # invoking the __init__ function of the CrawlSpider class, to not break crucial initialisations
 
     # As per https://docs.scrapy.org/en/latest/topics/spiders.html the "default implementation generates Request(url, dont_filter=True) 
     # for each url in start_urls"
@@ -104,12 +109,12 @@ blogs_schema = {
 
     # parse_start_url is called ONCE, for each start_urls. Here we override the function (from CrawlSpider) with our configuration.
     # it parses the web_feed for links, as they don't have theirs extracted by the LinkExtractor Rule.
-    # Because the LinkExtractor Rule only works where the response is an HtmlResponse (web_feed
+    # Because the LinkExtractor Rule only works where the response is an HtmlResponse 
     def parse_start_url(self, response):
         configure_logging(get_project_settings())
         logger = logging.getLogger()
 
-        # XML Response
+        """# XML Response
         # ------------------
         if isinstance(response, XmlResponse) and response.url == self.web_feed:
             logger.info('Processing web feed: {}'.format(response.url))
@@ -136,12 +141,12 @@ blogs_schema = {
                     yield Request(link, callback=self.parse_item) #
                 except ValueError:
                     logger.warn('ValueError for {}'.format(link)) # Sometimes links in feeds are relative and throw ValueError(f"Missing scheme in request url: {self._url}")
-
+"""
         # Html Response
         # ------------------
-        elif isinstance(response, HtmlResponse):
+        if isinstance(response, HtmlResponse):
             logger.info('Processing home page: {}'.format(response.url))
-            item = customparser(response, self.domain, self.site_config, self.common_config)
+            item = customparser(response, self.domain, self.site_config)
             yield item
             # from here on LinkExtractor will get to work!
         else:
@@ -152,12 +157,12 @@ blogs_schema = {
         logger = logging.getLogger()
         logger.debug('Parsing URL: {}'.format(response.url))
         #scrape_count = self.crawler.stats.get_value('item_scraped_count')
-        if not isinstance(response, TextResponse): #Text response is a class that is initiated when the response is 
+        if not isinstance(response, TextResponse): #Text response is a class that is initiated when the response is html/xml
             logger.info('Item {} is not a TextResponse, so skipping.'.format(response)) # Skip item if e.g. an image
         else:
-            item = customparser(response, self.domain, self.site_config, self.common_config)
+            item = customparser(response, self.domain, self.site_config)
             if item:
-                yield item
+                yield item # go pipeline
 
 
 

@@ -43,7 +43,7 @@ services:
 #    stdin_open: true
 #    environment:
 #      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-#      TEST_DOC_NUM: 10
+#      TEST_DOC_NUM: 5 # 5 sites to crawl for test
 #
 #  web:
 #    build:

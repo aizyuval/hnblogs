@@ -12,15 +12,15 @@ class TypesenseHelper:
     """TypesenseHelper"""
 
     def __init__(
-        self, alias_name, collection_name_tmp, custom_settings
+        self, alias_name, collection_name_tmp
     ):   # alias_name is the name for global actual index
         self.typesense_client = typesense.Client(
             {
                 'api_key': os.environ.get('TYPESENSE_API_KEY', None),
                 'nodes': [
                     {
-                        'host': os.environ.get('TYPESENSE_HOST', None),
-                        'port': os.environ.get('TYPESENSE_PORT', None),
+                        'host': os.environ.get('localhost', None),
+                        'port': os.environ.get('8108', None),
                         'path': os.environ.get('TYPESENSE_PATH', ''),
                         'protocol': os.environ.get('TYPESENSE_PROTOCOL', None),
                     }
@@ -33,7 +33,6 @@ class TypesenseHelper:
         self.collection_locale = os.environ.get(
             'TYPESENSE_COLLECTION_LOCALE', 'en'
         )
-        self.custom_settings = custom_settings
 
     def create_tmp_collection(self):
         """Create a temporary index to add records to"""
@@ -51,7 +50,7 @@ class TypesenseHelper:
                 {'name': 'title', 'type': 'string'},
                 {'name': 'content', 'type': 'string'},
                 {'name': 'domain', 'type': 'string', 'facet': true},
-                {'name': 'page-type', 'type': 'string'},
+                {'name': 'page_type', 'type': 'string'},
                 {'name': 'description', 'type': 'string', 'optional': true},
                 {'name': 'anchor', 'type': 'string', 'optional': true},
                 {'name': 'language', 'type': 'string', 'optional': true},
