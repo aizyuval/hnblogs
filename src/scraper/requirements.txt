@@ -1,0 +1,7 @@
+typesense
+scrapy
+psycopg2
+beautifulsoup4
+httpdate
+datetime
+httplib2
