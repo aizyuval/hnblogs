@@ -28,22 +28,24 @@ services:
     environment:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
 
-#  scraper:
-#    build:
-#      context: "scraper/"
-#      args:
-#        - env=test
-#    image: scraper_test
-##    volumes:
-##      - "./scraper:/usr/src/app/:ro"
-#    depends_on:
-#      - typesense
-#      - db
-#    tty: true
-#    stdin_open: true
-#    environment:
-#      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-#      TEST_DOC_NUM: 5 # 5 sites to crawl for test
+  scraper:
+    build:
+      context: "scraper/"
+      args:
+        - env=test
+    image: scraper_test
+    container_name: scraper_test
+#    volumes:
+#      - "./scraper:/usr/src/app/:ro"
+    depends_on:
+      - typesense
+      - db
+    tty: true
+    stdin_open: true
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      TYPESENSE_API_KEY: ${TYPESENSE_API_KEY}
+      TEST_SITES_NUM: 5 # 5 sites to crawl for test
 #
 #  web:
 #    build:
