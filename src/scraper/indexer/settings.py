@@ -17,16 +17,14 @@ BOT_NAME = 'indexer'
 SPIDER_MODULES = ['indexer.spiders']
 NEWSPIDER_MODULE = 'indexer.spiders'
 
-# Searchmysite custom config for database settings
-DB_PASSWORD = os.getenv('POSTGRES_PASSWORD')
+# hnblogs custom config for database settings
+DB_PASSWORD = os.getenv('POSTGRES_PASSWORD')   # (->docker-compose->.env)
 DB_NAME = 'hnblogsdb'
 DB_USER = 'postgres'
 DB_HOST = 'db'
 
-# Searchmysite custom config for search
-SOLR_URL = 'http://search:8983/solr/content/'
 
-# The following are automatically taken by scrapy when calling configure_logging:
+# The following are automatically loaded by scrapy onto the ROOT logger, when calling configure_logging. We will be using the root logger for all modules (and libraries), with these values
 LOG_LEVEL = 'INFO'
 LOG_FILE = logs
 
