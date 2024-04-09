@@ -1,21 +1,20 @@
 import scrapy
 from scrapy.linkextractors import LinkExtractor
 from scrapy.exceptions import DropItem
-from scrapy.http import HtmlResponse, XmlResponse
+from scrapy.http import HtmlResponse
 from bs4 import BeautifulSoup, SoupStrainer
 import datetime
 from scrapy.utils.log import configure_logging
 from scrapy.utils.project import get_project_settings
 import logging
-import feedparser
 from httpdate import httpdate_to_unixtime
-from common.utils import get_text
+from utils import get_text
 
 """ Typesense schema:
 
 blogs_schema = { 
         # id
-	    "name": "hnblogs", 
+	    "name": "hnblogsschema", 
 	    "fields": [ 
 	    { "name": "title", "type": "string" }, -Vx
 	    { "name": "content", "type": "string" }, -Vx
@@ -94,7 +93,7 @@ def customparser(response, domain, site_config):
     item['url'] = response.url
 
     # domain
-    item['domain'] = domain
+    item['domain'] = domain   # this is constant
 
     # content_type, e.g. text/html; charset=utf-8
     content_type = None
@@ -113,7 +112,9 @@ def customparser(response, domain, site_config):
     item['page_last_modified'] = last_modified_date
 
     # indexed_date
-    indexed_date = datetime.datetime.now().timestamp()   # unix-time
+    indexed_date = int(
+        datetime.datetime.now().timestamp()
+    )   # unix-time (int64)
     item['indexed_date'] = indexed_date
 
     """
@@ -166,9 +167,8 @@ def customparser(response, domain, site_config):
             content_text = get_text(body_html)
         item['content'] = content_text
 
-        # language, e.g. en-GB
+        # language, e.g. en-US
         language = response.xpath('/html/@lang').get()
-        # if language: language = language.lower() # Lowercasing to prevent facetted nav thinking e.g. en-GB and en-gb are different
         item['language'] = language
 
         """
